@@ -13,6 +13,11 @@
   "paths": {
     "/categories" : {
       "get" : {
+        "security": [
+          {
+            "CategoryAuth" : []
+          }
+        ],
         "tags": ["Category API"],
         "description": "List all Categories",
         "summary": "List all Categories",
@@ -44,6 +49,11 @@
         }
       },
       "post" : {
+        "security": [
+          {
+            "CategoryAuth" : []
+          }
+        ],
         "tags": ["Category API"],
         "description": "Create new Category",
         "summary": "Create new Category",
@@ -51,12 +61,7 @@
           "content": {
             "application/json" : {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name" : {
-                    "type": "string"
-                  }
-                }
+                "$ref": "#/components/schemas/CreateOrUpdateCategory"
               }
             }
           }
@@ -85,10 +90,131 @@
           }
         }
       }
+    },
+    "/categories/{categoryId}" : {
+      "get" : {
+        "security": [
+          {
+            "CategoryAuth" : []
+          }
+        ],
+        "tags": ["Category API"],
+        "summary": "Get Category by Id - summary",
+        "description": "Get Category by id - description",
+        "parameters": [
+          {
+            "name" : "categoryId",
+            "in" : "path",
+            "description": "Category Id"
+          }
+        ],
+        "responses": {
+          "200" : {
+            "description": "Success get category",
+            "content": {
+              "application/json" : {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code" : {
+                      "type": "number"
+                    },
+                    "status" : {
+                      "type": "string"
+                    },
+                    "data" : {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "security": [
+          {
+            "CategoryAuth" : []
+          }
+        ],
+        "tags": ["Category API"],
+        "summary": "Update Category by Id - summary",
+        "description": "Update Category by Id - description",
+        "parameters": [
+          {
+            "name" : "categoryId",
+            "in" : "path",
+            "description": "Category Id"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json" : {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrUpdateCategory"
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "security": [
+          {
+            "CategoryAuth" : []
+          }
+        ],
+        "tags": ["Category API"],
+        "summary": "Delete Category by Id - summary",
+        "description": "Delete Category by Id - description",
+        "parameters": [
+          {
+            "name" : "categoryId",
+            "in" : "path",
+            "description": "Category Id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success delete category",
+            "content": {
+              "application/json" : {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code" : {
+                      "type": "number"
+                    },
+                    "status" : {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
+    "securitySchemes": {
+      "CategoryAuth" : {
+        "type": "apiKey",
+        "in" : "header",
+        "name" : "X-API-Key",
+        "description": "Authentication for Category API"
+      }
+    },
     "schemas": {
+      "CreateOrUpdateCategory" : {
+        "type": "object",
+        "properties": {
+          "name" : {
+            "type": "string"
+          }
+        }
+      },
       "Category" : {
         "type": "object",
         "properties": {

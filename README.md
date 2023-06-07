@@ -13,3 +13,47 @@
 
 # MEMBUAT OPEN API
 ### - API SPEC LIST CATEGORY
+### - API SPEC CREATE CATEGORY
+### - API SPEC GET CATEGORY
+### - API SPEC PUT CATEGORY
+### - API SPEC DELETE CATEGORY
+
+
+# API SPEC SECURITY
+
+
+# CREATE DATABASE
+```mysql
+CREATE TABLE category
+(
+    id integer primary key auto_increment,
+    name varchar(255) not null
+) engine = InnoDB;
+
+select * from category;
+
+desc category;
+```
+
+
+# CATEGORY DOMAIN
+```go
+type Category struct {
+	Id   int
+	Name string
+}
+```
+
+# CATEGORY REPOSITORY
+```go
+type CategoryRepository interface {
+	Save(ctx context.Context, tx sql.Tx, category domain.Category) domain.Category
+	Update(ctx context.Context, tx sql.Tx, category domain.Category) domain.Category
+	Delete(ctx context.Context, tx sql.Tx, category domain.Category)
+	FindById(ctx context.Context, tx sql.Tx, categoryId int) domain.Category
+	FindAll(ctx context.Context, tx sql.Tx) []domain.Category
+}
+```
+
+
+# CATEGORY REPOSITORY IMPLEMENTATION
