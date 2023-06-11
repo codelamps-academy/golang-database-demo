@@ -140,5 +140,355 @@ type CategoryService interface {
 
 # CATEGORY SERVICE IMPLEMENTATION
 ```go
+type CategoryServiceImpl struct {
+	CategoryRepository repository.CategoryRepository
+
+	DB *sql.DB
+}
+
+func (service CategoryServiceImpl) Create(ctx context.Context, request web.CategoryCreateRequest) web.CategoryResponse {
+	//TODO implement me
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+
+	defer helper.CommitOrRollback(tx)
+
+	category := domain.Category{
+		Name: request.Name,
+	}
+
+	category = service.CategoryRepository.Save(ctx, tx, category)
+
+	return helper.ToCategoryResponse(category)
+
+}
+
+func (service CategoryServiceImpl) Update(ctx context.Context, request web.CategoryUpdateRequest) web.CategoryResponse {
+	//TODO implement me
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollback(tx)
+
+	category, err := service.CategoryRepository.FindById(ctx, tx, request.Id)
+	helper.PanicIfError(err)
+
+	category.Name = request.Name
+
+	update := service.CategoryRepository.Update(ctx, tx, category)
+
+	return helper.ToCategoryResponse(update)
+}
+
+func (service CategoryServiceImpl) Delete(ctx context.Context, categoryId int) {
+	//TODO implement me
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollback(tx)
+
+	category, err := service.CategoryRepository.FindById(ctx, tx, categoryId)
+	helper.PanicIfError(err)
+
+	service.CategoryRepository.Delete(ctx, tx, category)
+}
+
+func (service CategoryServiceImpl) FindById(ctx context.Context, categoryId int) web.CategoryResponse {
+	//TODO implement me
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollback(tx)
+
+	category, err := service.CategoryRepository.FindById(ctx, tx, categoryId)
+	helper.PanicIfError(err)
+
+	return helper.ToCategoryResponse(category)
+}
+
+func (service CategoryServiceImpl) FindAll(ctx context.Context) []web.CategoryResponse {
+	//TODO implement me
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollback(tx)
+
+	categories := service.CategoryRepository.FindAll(ctx, tx)
+
+	var categoryReponse []web.CategoryResponse
+	for _, category := range categories {
+		categoryReponse = append(categoryReponse, helper.ToCategoryResponse(category))
+	}
+
+	return categoryReponse
+}
+```
+
+
+# CATEGORY VALIDATION
+```go
+===
+type CategoryCreateRequest struct {
+	Name string `validate:"required"`
+}
+===
+
+===
+type CategoryUpdateRequest struct {
+Id   int    `validate:"required"`
+Name string `validate:"required,min=1"`
+}
+===
+
+===
+type CategoryServiceImpl struct {
+CategoryRepository repository.CategoryRepository
+DB                 *sql.DB
+Validate           *validator.Validate
+}
+===
+
+===
+func (service CategoryServiceImpl) Create(ctx context.Context, request web.CategoryCreateRequest) web.CategoryResponse {
+//TODO implement me
+errValidate := service.Validate.Struct(request)
+helper.PanicIfError(errValidate)
+
+tx, err := service.DB.Begin()
+helper.PanicIfError(err)
+
+defer helper.CommitOrRollback(tx)
+
+category := domain.Category{
+Name: request.Name,
+}
+
+category = service.CategoryRepository.Save(ctx, tx, category)
+
+return helper.ToCategoryResponse(category)
+
+}
+```
+
+
+# CATEGORY CONTROLLER
+```go
+type CategoryController interface {
+	Create(writer http.ResponseWriter, request http.Request, params httprouter.Params)
+	Update(writer http.ResponseWriter, request http.Request, params httprouter.Params)
+	Delete(writer http.ResponseWriter, request http.Request, params httprouter.Params)
+	FindById(writer http.ResponseWriter, request http.Request, params httprouter.Params)
+	FindAll(writer http.ResponseWriter, request http.Request, params httprouter.Params)
+}
+```
+
+# CATEGORY CONTROLLER IMPLEMENTATION
+```go
+type CategoryControllerImpl struct {
+	CategoryService service.CategoryService
+}
+
+func (controller CategoryControllerImpl) Create(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+
+	decoder := json.NewDecoder(request.Body)
+	categoryCreateRequest := web.CategoryCreateRequest{}
+	err := decoder.Decode(&categoryCreateRequest)
+	helper.PanicIfError(err)
+
+	categoryResponse := controller.CategoryService.Create(request.Context(), categoryCreateRequest)
+	webResponse := web.WebResponse{
+		Code:   200,
+		Status: "Success",
+		Data:   categoryResponse,
+	}
+
+	writer.Header().Add("Content-Type", "application/json")
+	encoder := json.NewEncoder(writer)
+	err = encoder.Encode(webResponse)
+	helper.PanicIfError(err)
+
+}
+
+func (controller CategoryControllerImpl) Update(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	//TODO implement me
+	decoder := json.NewDecoder(request.Body)
+	categoryUpdateRequest := web.CategoryUpdateRequest{}
+	err := decoder.Decode(&categoryUpdateRequest)
+	helper.PanicIfError(err)
+
+	categoryId := params.ByName("categoryId")
+	id, err := strconv.Atoi(categoryId)
+	helper.PanicIfError(err)
+
+	categoryUpdateRequest.Id = id
+
+	categoryResponse := controller.CategoryService.Update(request.Context(), categoryUpdateRequest)
+	webResponse := web.WebResponse{
+		Code:   200,
+		Status: "Success",
+		Data:   categoryResponse,
+	}
+
+	writer.Header().Add("Content-Type", "application/json")
+	encoder := json.NewEncoder(writer)
+	err = encoder.Encode(webResponse)
+	helper.PanicIfError(err)
+}
+
+func (controller CategoryControllerImpl) Delete(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	//TODO implement me
+
+	categoryId := params.ByName("categoryId")
+	id, err := strconv.Atoi(categoryId)
+	helper.PanicIfError(err)
+
+	controller.CategoryService.Delete(request.Context(), id)
+	webResponse := web.WebResponse{
+		Code:   200,
+		Status: "Success",
+		Data:   "",
+	}
+
+	writer.Header().Add("Content-Type", "application/json")
+	encoder := json.NewEncoder(writer)
+	err = encoder.Encode(webResponse)
+	helper.PanicIfError(err)
+}
+
+func (controller CategoryControllerImpl) FindById(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	//TODO implement me
+	categoryId := params.ByName("categoryId")
+	id, err := strconv.Atoi(categoryId)
+	helper.PanicIfError(err)
+
+	categoryResponse := controller.CategoryService.FindById(request.Context(), id)
+	webResponse := web.WebResponse{
+		Code:   200,
+		Status: "Success",
+		Data:   categoryResponse,
+	}
+
+	writer.Header().Add("Content-Type", "application/json")
+	encoder := json.NewEncoder(writer)
+	err = encoder.Encode(webResponse)
+	helper.PanicIfError(err)
+}
+
+func (controller CategoryControllerImpl) FindAll(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	//TODO implement me
+	categoryResponses := controller.CategoryService.FindAll(request.Context())
+	webResponse := web.WebResponse{
+		Code:   200,
+		Status: "Success",
+		Data:   categoryResponses,
+	}
+
+	writer.Header().Add("Content-Type", "application/json")
+	encoder := json.NewEncoder(writer)
+	err := encoder.Encode(webResponse)
+	helper.PanicIfError(err)
+}
+```
+
+
+# CATEGORY SERVICE
+```go
+type CategoryService interface {
+	Create(ctx context.Context, request web.CategoryCreateRequest) web.CategoryResponse
+	Update(ctx context.Context, request web.CategoryUpdateRequest) web.CategoryResponse
+	Delete(ctx context.Context, categoryId int)
+	FindById(ctx context.Context, categoryId int) web.CategoryResponse
+	FindAll(ctx context.Context) []web.CategoryResponse
+}
+```
+
+
+# CATEGORY SERVICE IMPLEMENTATION
+```go
+type CategoryServiceImpl struct {
+	CategoryRepository repository.CategoryRepository
+	DB                 *sql.DB
+	Validate           *validator.Validate
+}
+
+func (service CategoryServiceImpl) Create(ctx context.Context, request web.CategoryCreateRequest) web.CategoryResponse {
+	//TODO implement me
+	errValidate := service.Validate.Struct(request)
+	helper.PanicIfError(errValidate)
+
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+
+	defer helper.CommitOrRollback(tx)
+
+	category := domain.Category{
+		Name: request.Name,
+	}
+
+	category = service.CategoryRepository.Save(ctx, tx, category)
+
+	return helper.ToCategoryResponse(category)
+
+}
+
+func (service CategoryServiceImpl) Update(ctx context.Context, request web.CategoryUpdateRequest) web.CategoryResponse {
+	//TODO implement me
+	errValidate := service.Validate.Struct(request)
+	helper.PanicIfError(errValidate)
+
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollback(tx)
+
+	category, err := service.CategoryRepository.FindById(ctx, tx, request.Id)
+	helper.PanicIfError(err)
+
+	category.Name = request.Name
+
+	update := service.CategoryRepository.Update(ctx, tx, category)
+
+	return helper.ToCategoryResponse(update)
+}
+
+func (service CategoryServiceImpl) Delete(ctx context.Context, categoryId int) {
+	//TODO implement me
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollback(tx)
+
+	category, err := service.CategoryRepository.FindById(ctx, tx, categoryId)
+	helper.PanicIfError(err)
+
+	service.CategoryRepository.Delete(ctx, tx, category)
+}
+
+func (service CategoryServiceImpl) FindById(ctx context.Context, categoryId int) web.CategoryResponse {
+	//TODO implement me
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollback(tx)
+
+	category, err := service.CategoryRepository.FindById(ctx, tx, categoryId)
+	helper.PanicIfError(err)
+
+	return helper.ToCategoryResponse(category)
+}
+
+func (service CategoryServiceImpl) FindAll(ctx context.Context) []web.CategoryResponse {
+	//TODO implement me
+	tx, err := service.DB.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollback(tx)
+
+	categories := service.CategoryRepository.FindAll(ctx, tx)
+
+	var categoryReponse []web.CategoryResponse
+	for _, category := range categories {
+		categoryReponse = append(categoryReponse, helper.ToCategoryResponse(category))
+	}
+
+	return categoryReponse
+}
+```
+
+
+# HTTP ROUTER
+```go
 
 ```
