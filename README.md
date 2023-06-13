@@ -490,5 +490,33 @@ func (service CategoryServiceImpl) FindAll(ctx context.Context) []web.CategoryRe
 
 # HTTP ROUTER
 ```go
+func main() {
+
+	db := helper.NewDB()
+	validate := validator.New()
+	categoryRepository := repository.NewCategoryRepository()
+	categoryService := service.NewCategoryService(categoryRepository, db, validate)
+	categoryController := controller.NewCategoryController(categoryService)
+
+	router := httprouter.New()
+
+	// ROUTER UNTUK FIND ALL
+	router.GET("/api/categories", categoryController.FindAll)
+
+	// ROUTER UNTUK FIND BY ID
+	router.GET("/api/categories/:categoryId", categoryController.FindById)
+
+	// ROUTER UNTUK CREATE
+	router.POST("/api/categories", categoryController.Create)
+
+	// ROUTER UNTUK UPDATE
+	router.PUT("/api/categories/:categoryId", categoryController.Update)
+
+	// ROUTER UNTUK DELETE
+	router.DELETE("/api/categories/:categoryId", categoryController.Delete)
+}
 
 ```
+
+
+# HTTP SERVER
